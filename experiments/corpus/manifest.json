@@ -1,0 +1,32 @@
+{
+  "text_file": "raw\\simplewiki.txt",
+  "total_chars": 12436325,
+  "train_paras": 21029,
+  "val_paras": 650,
+  "tokenizers": [
+    {
+      "vocab_size": 1024,
+      "model_path": "tokenizers\\fineweb_1024_bpe.model",
+      "dataset_dir": "datasets\\proxy_sp1024",
+      "train_tokens": 4838123,
+      "val_tokens": 149796,
+      "bytes_per_token": 2.5704854961314543
+    },
+    {
+      "vocab_size": 4096,
+      "model_path": "tokenizers\\fineweb_4096_bpe.model",
+      "dataset_dir": "datasets\\proxy_sp4096",
+      "train_tokens": 3518745,
+      "val_tokens": 108971,
+      "bytes_per_token": 3.534306975924655
+    },
+    {
+      "vocab_size": 8192,
+      "model_path": "tokenizers\\fineweb_8192_bpe.model",
+      "dataset_dir": "datasets\\proxy_sp8192",
+      "train_tokens": 3143301,
+      "val_tokens": 97395,
+      "bytes_per_token": 3.956453740828511
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "baseline_seed_spread_std": 0.006772067985966324,
+  "baseline_n_seeds": 3,
+  "decision_rule": "SUPPORTED/NOT SUPPORTED require |mean paired delta| > 95% t half-width; otherwise UNRESOLVED (UNDERPOWERED). n<2 is UNRESOLVED (no variance estimate).",
+  "per_arm_resolution": {
+    "A1_sp4096": {
+      "n": 2,
+      "mean": -0.15356890428877856,
+      "sd": 0.008732471596055173,
+      "se": 0.0061747898820895255,
+      "half_width": 0.07845688024182952
+    },
+    "A2_sp8192": {
+      "n": 3,
+      "mean": -0.22482533084047374,
+      "sd": 0.0017225290880970446,
+      "se": 0.0009945026326997895,
+      "half_width": 0.0042793448285071934
+    },
+    "A3_qkgain": {
+      "n": 2,
+      "mean": 0.005466125535719124,
+      "sd": 0.008252453143130205,
+      "se": 0.005835365578931606,
+      "half_width": 0.07414415504590499
+    },
+    "A4_parresid": {
+      "n": 2,
+      "mean": 0.000575902487304436,
+      "sd": 0.0007158907905559232,
+      "se": 0.0005062112325910917,
+      "half_width": 0.00643191992130241
+    },
+    "A5_recurrence": {
+      "n": 2,
+      "mean": 0.014849987415259003,
+      "sd": 0.007216122721053654,
+      "se": 0.00510256930993136,
+      "half_width": 0.06483324565198785
+    },
+    "A6_ema": {
+      "n": 2,
+      "mean": 0.07320701451208422,
+      "sd": 0.004132045354450295,
+      "se": 0.0029217972903021745,
+      "half_width": 0.03712435637057943
+    },
+    "B1_combo": {
+      "n": 3,
+      "mean": -0.12792957260771506,
+      "sd": 0.005412536020157745,
+      "se": 0.00312492912823662,
+      "half_width": 0.013446570038802176
+    },
+    "B2_combo_qaema": {
+      "n": 3,
+      "mean": -0.1183772717298343,
+      "sd": 0.005336256587143946,
+      "se": 0.003080889177052471,
+      "half_width": 0.01325706612885678
+    },
+    "B3_combo_gptqoff": {
+      "n": 2,
+      "mean": -0.11527680886300828,
+      "sd": 0.0012627477679122967,
+      "se": 0.0008928975096189616,
+      "half_width": 0.011345155757218527
+    },
+    "Q1_int6_pct": {
+      "n": 2,
+      "mean": 0.0,
+      "sd": 0.0,
+      "se": 0.0,
+      "half_width": 0.0
+    },
+    "Q2_int6_sd": {
+      "n": 2,
+      "mean": 0.024297415615438078,
+      "sd": 0.0018567518592437903,
+      "se": 0.001312921830652014,
+      "half_width": 0.01668198478026449
+    },
+    "Q3_int8_sd": {
+      "n": 2,
+      "mean": 0.010170506728226503,
+      "sd": 0.0009795985366163244,
+      "se": 0.0006926807680818214,
+      "half_width": 0.008801201839247623
+    },
+    "Q4_int6_sd_gptq": {
+      "n": 2,
+      "mean": 0.019545389707791294,
+      "sd": 0.002364394335935428,
+      "se": 0.001671879268339005,
+      "half_width": 0.021242897983515398
+    },
+    "Q5_int6_sd_qat": {
+      "n": 2,
+      "mean": 0.033255848836481805,
+      "sd": 0.0058283972349203435,
+      "se": 0.004121299208261098,
+      "half_width": 0.052365227740165506
+    }
+  },
+  "predictions": [
+    {
+      "id": "P1",
+      "statement": "SP4096/SP8192 \u76f8\u5bf9 SP1024 \u964d\u4f4e\u672c\u5730 BPB",
+      "threshold": "\u0394 \u2264 \u22120.02",
+      "n": 3,
+      "measured": -0.22482533084047374,
+      "half_width": 0.0042793448285071934,
+      "verdict": "SUPPORTED",
+      "note": "evaluated on A2_sp8192; A1_sp4096: -0.1536, A2_sp8192: -0.2248"
+    },
+    {
+      "id": "P2",
+      "statement": "QK-Gain 5.25 \u76f8\u5bf9\u9ed8\u8ba4 1.5 \u6709\u6b63\u6536\u76ca",
+      "threshold": "\u0394 \u2264 \u22120.005",
+      "n": 2,
+      "measured": 0.005466125535719124,
+      "half_width": 0.07414415504590499,
+      "verdict": "UNRESOLVED (UNDERPOWERED)",
+      "note": "arm A3_qkgain vs A0_baseline"
+    },
+    {
+      "id": "P3",
+      "statement": "\u5e76\u884c\u6b8b\u5dee\uff08\u540e\u534a\u6bb5\u5c42\uff09\u6709\u6b63\u6536\u76ca",
+      "threshold": "\u0394 \u2264 \u22120.005",
+      "n": 2,
+      "measured": 0.000575902487304436,
+      "half_width": 0.00643191992130241,
+      "verdict": "UNRESOLVED (UNDERPOWERED)",
+      "note": "arm A4_parresid vs A0_baseline"
+    },
+    {
+      "id": "P4",
+      "statement": "\u6df1\u5ea6\u9012\u5f52\uff08\u5faa\u73af\u4e2d\u95f4\u5c42\uff09\u6709\u6b63\u6536\u76ca",
+      "threshold": "\u0394 \u2264 \u22120.005",
+      "n": 2,
+      "measured": 0.014849987415259003,
+      "half_width": 0.06483324565198785,
+      "verdict": "UNRESOLVED (UNDERPOWERED)",
+      "note": "arm A5_recurrence vs A0_baseline"
+    },
+    {
+      "id": "P5",
+      "statement": "\u6734\u7d20 EMA \u964d\u4f4e pre-quant BPB \u4f46\u653e\u5927 quantization tax",
+      "threshold": "\u0394tax > 0",
+      "n": 2,
+      "measured": -0.0003578791133358461,
+      "half_width": 0.001988752947562453,
+      "verdict": "UNRESOLVED (UNDERPOWERED)",
+      "note": "per-seed (tax[A6] \u2212 tax[A0])"
+    },
+    {
+      "id": "P6",
+      "statement": "\u8bad\u7ec3\u672b\u671f QAT \u628a quantization tax \u538b\u4f4e 50% \u4ee5\u4e0a",
+      "threshold": "reduction \u2265 50%",
+      "n": 2,
+      "measured": 0.4508248694139662,
+      "half_width": null,
+      "verdict": "NOT SUPPORTED",
+      "note": "tax +0.0260 \u2192 +0.0143 (n=2 seeds)"
+    },
+    {
+      "id": "P7",
+      "statement": "(\u539f\u521b) \u91cf\u5316\u611f\u77e5 EMA (QA-EMA) \u4f18\u4e8e\u6734\u7d20 EMA",
+      "threshold": "\u0394 \u2264 \u22120.002",
+      "n": 3,
+      "measured": 0.009552300877880763,
+      "half_width": 0.000760174602183767,
+      "verdict": "NOT SUPPORTED",
+      "note": "head-to-head B2 \u2212 B1, same config except EMA_QUANT_AWARE"
+    },
+    {
+      "id": "P8",
+      "statement": "\u540c\u7b49 6-bit \u4e0b GPTQ \u4f18\u4e8e RTN+SDClip",
+      "threshold": "\u0394 \u2264 \u22120.002",
+      "n": 2,
+      "measured": -0.004752025907646784,
+      "half_width": 0.0045609132032509055,
+      "verdict": "SUPPORTED",
+      "note": "head-to-head Q4 \u2212 Q2 (both int6+SDClip); combo cross-check B3 \u2212 B1: +0.0158"
+    }
+  ]
+}

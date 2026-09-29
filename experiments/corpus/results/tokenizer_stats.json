@@ -1,0 +1,29 @@
+{
+  "1024": {
+    "vocab_size": 1024,
+    "train_tokens": 4838123,
+    "val_tokens": 149796,
+    "tokens_per_byte": 0.38903156680128576,
+    "bytes_per_token": 2.5704854961314543,
+    "embedding_mb_at_d512": 2.097152,
+    "embedding_mb_at_d512_int8": 0.524288
+  },
+  "4096": {
+    "vocab_size": 4096,
+    "train_tokens": 3518745,
+    "val_tokens": 108971,
+    "tokens_per_byte": 0.2829409009494364,
+    "bytes_per_token": 3.534306975924655,
+    "embedding_mb_at_d512": 8.388608,
+    "embedding_mb_at_d512_int8": 2.097152
+  },
+  "8192": {
+    "vocab_size": 8192,
+    "train_tokens": 3143301,
+    "val_tokens": 97395,
+    "tokens_per_byte": 0.25275159663324975,
+    "bytes_per_token": 3.956453740828511,
+    "embedding_mb_at_d512": 16.777216,
+    "embedding_mb_at_d512_int8": 4.194304
+  }
+}

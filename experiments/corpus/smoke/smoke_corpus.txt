@@ -1,0 +1,5208 @@
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+
+# Challenge C2G：参数高尔夫 —— 极限约束下的语言模型训练
+
+## Parameter Golf — Train the Best nanoGPT in 10 Minutes, 16MB
+
+> 🔥 **这不是作业，这是全球顶级 AI 实验室的招聘入场券。**
+> 本质：在 8 张 H100、10 分钟、16MB 的硬约束下，训出比别人更强的语言模型。
+> 做到前 20 就是年薪 $200,000+ 的 ML 岗位候选人。
+
+**课程：** AI+X Elite 20 Program · SIAS University
+**原始赛事：** [OpenAI Parameter Golf Challenge](https://github.com/openai/parameter-golf)
+**赛事窗口：** 2026-03-18 → 2026-04-30
+**OpenAI 支持：** $1,000,000 算力积分（专门面向本科生、应届生、奥赛奖牌得主）
+**职业出口：** 榜单前列者可直通 OpenAI / Anthropic / DeepMind / xAI / 字节 Seed / Moonshot / DeepSeek 的 ML Research Engineer / Member of Technical Staff 岗位，起薪普遍 $200,000–$500,000/年（国内 60 万–150 万人民币/年起）。
+
+---
+
+## 背景：为什么是参数高尔夫？
+
+过去十年，AI 模型竞赛是一场「谁的显卡多」的军备赛。GPT-4 要 25,000 张 A100，Llama-3 要 16,000 张 H100。普通研究者连入场券都没有。
+
+OpenAI 在 2026 年 3 月发布的 **Parameter Golf Challenge** 把这件事**反过来**了：
+
+> **所有人用同样的 8 张 H100，同样的 10 分钟训练时长，同样的 16MB 模型大小限制。**
+> **比的不是谁的资源多，而是谁的算法和系统设计能力更强。**
+
+这就像高尔夫球——不是谁挥杆次数多谁赢，而是**谁用最少的杆数把球打进洞**。
+
+在这个比赛里：
+
+- 你写的每一行代码都有意义
+- 你对 Transformer 架构的每一个改动都会反映在榜单上
+- 你对优化器、量化、训练稳定性的理解，一天内就能被客观检验
+- 你不需要 8 张 H100——**你需要的是一张 H100 的 10 分钟和无数次的想法迭代**
+
+**这是过去十年最适合个人研究者证明自己的竞赛。**
+
+---
+
+## 赛事硬约束（必须满足才能上榜）
+
+| 约束 | 数值 | 含义 |
+|------|------|------|
+| **最大训练时间** | 10 分钟（wallclock） | 在 8 × H100 SXM 上，从 0 到训练完成 |
+| **模型文件上限** | 16 MB (16,000,000 字节) | 含代码 + 压缩权重 + tokenizer |
+| **评估数据集** | FineWeb validation | 不可下载、不可联网 |
+| **评估指标** | Bits-Per-Byte (BPB) | 越低越好，tokenizer 无关 |
+| **评估时间上限** | 10 分钟（8 × H100） | 推理也要快 |
+| **无外部调用** | 禁止任何联网 | 不能 call API、不能下模型 |
+
+**基线（Naive Baseline）：** 9 层、512 维、tied embedding、4 个 KV head 的 Transformer ≈ **1.2244 BPB**
+**当前榜首（2026-04）：** SP8192 + 3-Layer Recurrence ≈ **1.0810 BPB**
+**录取门槛建议：** 低于 1.15 BPB 即进入 Elite 20 核心候选名单
+
+---
+
+## 为什么 C2G 能让你拿到 $200K/年 的 offer？
+
+这是一个极其罕见的机会窗口：
+
+```
+一般 ML 岗位招聘流程：
+简历 → 在线测评 → HR 面 → 技术面 x3 → 系统设计 → 文化面 → offer（3–6 个月）
+
+Parameter Golf 流程：
+上榜 → OpenAI 主动发 DM → 跳过前 5 轮 → 直接 onsite（2 周）
+```
+
+**为什么这个比赛是招聘信号？**
+
+- 它同时考察：**架构能力**（改 Transformer）+ **系统能力**（H100 上的高效训练）+ **优化理论**（优化器、学习率、量化）+ **工程迭代速度**（一天跑多少个实验）
+- 这四项能力同时具备的人，正是 OpenAI / DeepMind 最缺的人
+- 而且这是**客观指标**——BPB 数字不会说谎，没有背景包装、没有关系户
+
+**公开信号：** OpenAI 明确说明，**"current undergraduate students and recent graduates, including Olympiad medalists"** 是此比赛的重点招聘对象。
+
+> 📣 **这不是夸大宣传。** 参数高尔夫的前 20 名里，过去一年已经有超过一半进入顶级 AI 实验室。此比赛**本身就是前沿实验室的招聘漏斗**。
+
+---
+
+## 与其他 Elite20 挑战的关系
+
+| | C2 | C2A/C9 | C2G |
+|--|----|--------|-----|
+| 本质 | AI4Math 论文 | 设计 AGI benchmark | **端到端训练顶级 LM** |
+| 技能树 | 理论研究 | 认知科学 + 评估设计 | **架构 + 系统 + 优化** |
+| 起点 | 论文 | 论文 + Kaggle | **nanoGPT + OpenAI 官方代码** |
+| 验证方式 | 同行评审 | Kaggle 官方评估 | **BPB 数字 + 全球榜单** |
+| 职业信号 | 研究方向 | 研究方向 | **直通顶级 AI 岗位** |
+
+**完成 C2G 可同时计入：**
+- **C5**（GitHub Repo）—— 公开你的训练代码和实验日志
+- **C9**（自驱项目）—— 本身就是一个极致的自驱项目
+- **C10**（构建个人智能体）—— 你训出的模型可以作为本地 Agent 的大脑
+
+---
+
+## 适用原则
+
+**⚡ AI-First 原则：** Parameter Golf 的本质就是**用 AI 训 AI**。开发过程必须全程 AI 驱动：
+- 用 Claude / GPT 做代码 review、算子融合建议、loss 曲线诊断
+- 用 AI 生成实验假设、设计对比实验矩阵
+- 用 AI 撰写训练日志和技术报告
+- **每一次手动调试都要反向举证："这一步为什么没让 AI 帮忙？"**
+
+**📚 拿来主义原则：** 严禁从零写 Transformer。正确起点是：
+- **nanoGPT**（Andrej Karpathy）—— 所有现代参数高尔夫方案的共同祖先
+- **OpenAI 官方 `train_gpt.py` 脚手架** —— 提供 I/O、评估、榜单提交格式
+- **历史 top 方案**（按规则可复用）—— 站在巨人肩膀上
+
+说明你**拿了什么、改了什么、为什么改**。这三句话就是你的工程能力证明。
+
+**📛 命名规范：** `姓名拼音_C2G_内容描述.扩展名`
+
+---
+
+## Starter Kit 说明
+
+随本挑战附带 `c2g-parameter-golf-starter/`（需同学自行从 [openai/parameter-golf](https://github.com/openai/parameter-golf) Fork），建议目录结构：
+
+```
+c2g-parameter-golf-starter/
+├── README.md                         ← OpenAI 官方说明
+├── train_gpt.py                      ← 基线训练脚本（nanoGPT 改造）
+├── eval_bpb.py                       ← BPB 评估器（tokenizer-agnostic）
+├── submission.json                   ← 提交元数据
+├── data/
+│   └── fineweb_val.bin              ← 评估集（下载 + 缓存）
+├── tokenizer/
+│   ├── bpe_1024.json                ← 基线 1024 vocab
+│   └── sp_8192.model                ← 可选 SentencePiece 8192 vocab
+├── baselines/
+│   ├── naive_9l512d.py              ← 1.2244 BPB 基线
+│   └── tied_kv4.py                  ← 参考实现
+├── reference_top_submissions/       ← 当前榜单前 5 方案（含训练日志）
+│   ├── sp8192_3layer_recurrence/
+│   ├── sp8192_parallel_residual/
+│   ├── sp8192_qk_gain5/
+│   ├── sp8192_hessian_sdclip/
+│   └── sp8192_gptq_embedding/
+└── logs/
+    └── baseline_run_001.json         ← 示例训练日志
+```
+
+### 关键子模块
+
+| 模块 | 你需要理解的 | 改进方向 |
+|------|-------------|---------|
+| **Tokenizer** | BPE vs SentencePiece、vocab size 对 BPB 的影响 | SP4096 / SP8192 扩充 |
+| **Architecture** | MHA / GQA / MQA、tied embedding、rope / alibi | parallel residual、depth recurrence |
+| **Optimizer** | AdamW / Lion / **Muon**、学习率 warmup | Muon + 权重衰减调参 |
+| **Quantization** | int8 / int6 / GPTQ、模型大小压缩 | 嵌入量化、权重打包 |
+| **Training Loop** | mixed precision、gradient checkpointing | compile 优化、batch 调度 |
+| **Artifact Packing** | 16MB 硬约束下的 tokenizer + 权重 + 代码打包 | 最大化每一字节 |
+
+---
+
+## 四级任务（由浅入深）
+
+### Level 1：跑通基线（Bronze 🥉）
+
+> **让官方 baseline 在你手上跑出 1.22 BPB。**
+
+> ⚠️ **先提方案，再给算力。** Level 1 的 **$25 赞助算力额度不是「报名就给」**——你必须先交一份 **`方案草案.md`**（详见下方"算力申请门槛"），由挑战组审核通过后才发放算力券。这是一个真实的 ML 岗位工作流：没人会在你说不清楚"打算怎么训"之前把 H100 交到你手上。
+
+- **先**交 `姓名_C2G_方案草案.md`（≥ 500 字，含：目标 BPB、打算做的实验、预估算力用量、为什么这个思路可行）
+- 审核通过后，领取 **$25 Level 1 算力券**（或自费，或 OpenAI $1M 积分）
+- Fork [openai/parameter-golf](https://github.com/openai/parameter-golf) 到自己的 GitHub
+- 在租的 H100 云实例（Lambda / Vast.ai / RunPod / AutoDL）上跑通 `train_gpt.py`
+- 复现官方 baseline 的 BPB 数字（允许 ±0.005）
+- 理解 `submission.json` 的每个字段
+- 把训练日志可视化（loss / grad norm / tokens/sec）
+
+**交付：** 方案草案 + 可复现的 baseline 训练日志 + 生成的 16MB artifact
+
+---
+
+### Level 2：单点改进（Silver 🥈）
+
+> **做一个有理有据的改动，把 baseline 从 1.2244 压到 1.18 以下。**
+
+选择**一个**方向，不要贪多：
+
+| 方向 | 参考方案 | 预期改进 |
+|------|---------|---------|
+| Tokenizer 升级 | SP4096 / SP8192 | -0.03 ~ -0.05 |
+| Optimizer 升级 | Muon + WD 调参 | -0.01 ~ -0.02 |
+| 架构微调 | parallel residuals | -0.01 ~ -0.02 |
+| 量化 | int8 / int6 embedding | -0.01（但省下的空间能多训） |
+| 架构微调 | QK-gain / RMSNorm 位置 | -0.01 ~ -0.02 |
+
+**核心要求：** 不是拍脑袋改，是**先写假设 → 跑对照实验 → 看 BPB 差值 → 写出分析**。这就是 ML 工程师日常工作的核心。
+
+**交付：** BPB < 1.18 的提交 + 对照实验报告（至少 3 个 seed）
+
+---
+
+### Level 3：进入全球前 50（Gold 🥇）
+
+> **BPB < 1.12，进入 OpenAI 公开榜单前 50。**
+
+需要把**至少两个**优化方向组合起来，并理解它们之间的交互效应：
+
+- SP8192 + Muon + int6 量化
+- Parallel residuals + Hessian-aware clipping
+- 3-layer recurrence + QK-gain
+- 任何你自己发现的组合
+
+**核心挑战：** 组合优化往往会互相抵消甚至负向。你必须设计**消融实验**证明每个组件的贡献，并解释**为什么它们能协同工作**。
+
+**统计显著性要求：** 新 record 必须比当前 SOTA 低 **≥ 0.005 nats**，且 **p < 0.01**（至少 3 次独立 seed 跑）。
+
+**交付：**
+- BPB < 1.12 的提交
+- 消融实验表格（每个组件单独 + 组合）
+- 统计显著性分析
+- 公开到 OpenAI 榜单
+
+---
+
+### Level 4：上全球前 20（Platinum 💎）
+
+> **BPB < 1.085，挑战当前 SOTA，进入全球 top 20。**
+
+这个级别是**独立科研贡献**的水准：
+
+- 原创的架构改动（不是照搬现有方案）
+- 原创的训练策略（课程学习 / test-time training / 数据混合）
+- 原创的量化方案（针对 16MB 约束定制）
+- 完整的 ablation + 理论解释
+- 可复现的训练脚本 + 3 个种子的日志
+- 英文技术报告（可投 workshop paper）
+
+**附加交付：**
+- GitHub Repo（含 CI，一键复现）
+- 英文 technical report（PDF，≥ 6 页）
+- 录一个 10 分钟的讲解视频（Loom / Bilibili）
+- 在群内做一次分享讲座
+
+**🏆 首个达成 Level 4 的同学，直接获得 Elite 20 最高荣誉 + 推荐信 + OpenAI 招聘通道内推。**
+
+---
+
+## 资源与成本（真实预算）
+
+### 🚪 算力申请门槛（**所有等级通用**）
+
+> **C2G 的第一道门不是代码，是思考。**
+
+| 等级 | Elite20 赞助额度 | 申请条件 |
+|------|------------------|----------|
+| **Level 1** | **$25** 算力券（约 1–2 次完整 8×H100 跑） | 提交 `姓名_C2G_方案草案.md`（≥ 500 字） |
+| **Level 2** | **$100** 算力券 | Level 1 方案通过 + 单点改进 RFC（≥ 1000 字，含假设 / 对照设计 / 风险） |
+| **Level 3** | **$300** 算力券 + OpenAI $1M 积分申请辅导 | Level 2 交付完成 + 组合优化 RFC + 消融实验计划 |
+| **Level 4** | 独立谈（可对接 GPU 赞助商 / 学校集群 / OpenAI 官方） | Level 3 结果 + 英文 technical report 初稿 |
+
+**方案草案（Level 1）必须回答的 4 个问题：**
+
+1. **你打算把 baseline 从 1.2244 往哪个方向压？** 比如：tokenizer / optimizer / 架构 / 量化，选一个。不能回答"都试试"。
+2. **你怎么知道这个方向有效？** 引用 ≥ 1 篇论文或 ≥ 1 条 modded-nanoGPT 的历史提交，写明你读到的证据。
+3. **你打算跑多少次实验？每次要看什么指标？** 估算你的 $25 怎么花——先跑 baseline？还是先跑小尺寸验证？
+4. **失败怎么办？** 如果你的改动让 BPB 变差，你的下一步是什么？（这一条最能暴露一个人是否真的想清楚了。）
+
+> **为什么设这个门槛？** 因为这就是 ML 岗位的真实工作方式。NVIDIA / OpenAI / Anthropic 的研究员从来不是"先 `git clone` 再说"——他们在拿到 GPU 之前先写 **research plan**，经过 mentor 审核才开跑。**C2G 是在训练你这个习惯本身。**
+
+### 算力资源（搭配使用）
+
+| 方案 | 成本 | 优势 | 劣势 |
+|------|------|------|------|
+| **Elite20 Level 1 算力券** | $25（先审核后发放） | 审核通过即得 | 需写方案草案 |
+| **OpenAI $1M 算力积分** | $0（申请制） | 免费、官方支持 | 需申请、可能排队 |
+| **Lambda Cloud 8xH100** | ~$24/小时 | 按需付费 | 需信用卡 |
+| **RunPod 8xH100** | ~$22/小时 | 便宜 | 可用性不稳 |
+| **Vast.ai 8xH100** | ~$18/小时 | 最便宜 | 质量参差 |
+| **AutoDL（国内）** | ~¥150/小时 | 免翻墙 | H100 少，A100 居多 |
+| **学校集群** | $0 | 免费 | 排队、老显卡 |
+
+**真实预算估算（Level 2 到 Level 3）：**
+- 约 30–50 次完整训练（每次 10 分钟）
+- 约 10–20 小时的代码调试 / 数据准备（用 A100 即可）
+- **总成本：$150–$500**（或 ¥1000–¥3500）
+
+**💡 省钱建议：** 先在单张 A100 上用 nanoGPT 小模型验证思路，最后只在 8xH100 上跑**最后的 3 次提交**。这样 80% 的实验都在便宜硬件上完成。
+
+### 申请 OpenAI 算力积分
+
+OpenAI 官方表示 $1M 算力积分**优先支持**：
+- 本科在校生或应届毕业生
+- 奥林匹克奖牌得主（数学 / 物理 / 信息学）
+- 公开 GitHub 有 ML 项目的人
+
+**申请方式：** 在 [openai/parameter-golf](https://github.com/openai/parameter-golf) issue 区发 `[compute request]`，附一份 500 字的研究计划。建议**用 Claude 先打磨 3 轮**再发。
+
+---
+
+## 必须提交的文件
+
+| 文件 | 命名格式 | 说明 |
+|------|----------|------|
+| **⚡ 方案草案（算力申请用）** | `姓名_C2G_方案草案.md` | ≥ 500 字，回答 4 个门槛问题。**无此项无法领算力券、无法进入 Level 1。** |
+| **方案设计文档** | `姓名_C2G_方案设计.md` | 目标 Level、技术选型、实验矩阵（在方案草案基础上扩展） |
+| **训练代码** | `姓名_C2G_train_gpt.py` | 最终提交的训练脚本 |
+| **16MB Artifact** | `姓名_C2G_submission.tar.gz` | 含代码 + 压缩权重 + tokenizer |
+| **提交元数据** | `姓名_C2G_submission.json` | BPB、训练时间、硬件、seed |
+| **训练日志** | `姓名_C2G_logs/` | 至少 3 个独立 seed 的完整日志 |
+| **消融实验报告** | `姓名_C2G_ablation.md` | 每个组件的单独贡献 + 组合效应 |
+| **BPB 对比表** | `姓名_C2G_leaderboard.md` | 你的方案 vs baseline vs 当前 SOTA |
+| **⚡ AI 日志（必须）** | `姓名_C2G_AI日志.md` | 开发全过程 AI 使用记录。**无此项无法评审。** |
+| **拿来说明** | `姓名_C2G_拿来说明.md` | 从 nanoGPT / 官方 repo / 历史 top 方案拿了什么、改了什么 |
+| **（Level 4 额外）** | `姓名_C2G_tech_report.pdf` | 6+ 页英文技术报告，格式参考 NeurIPS workshop |
+
+---
+
+## 评审标准
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| **BPB 数字** | 35% | 客观指标，低者优先。达到 Level 3（< 1.12）即满分 35 |
+| **实验设计** | 20% | 假设 → 对照 → 分析 是否严谨？消融是否完整？ |
+| **复现性** | 15% | 代码是否能在干净环境一键复现？log 是否完整？ |
+| **AI 使用深度** | 15% | AI 日志是否展示了真正的人-AI 协作？还是走过场？ |
+| **拿来主义质量** | 10% | 对 nanoGPT 和历史方案的理解、引用、改造是否清晰？ |
+| **表达与洞察** | 5% | 技术报告 / 分析文档是否有独到见解？ |
+
+---
+
+## 起步指南
+
+### Step 1：环境准备（Day 1）
+
+```bash
+# 在租的 H100 机器或学校集群上
+git clone https://github.com/openai/parameter-golf.git
+cd parameter-golf
+
+# 安装依赖
+pip install torch>=2.3 sentencepiece numpy tqdm --break-system-packages
+pip install flash-attn --no-build-isolation --break-system-packages
+
+# 下载数据（只要下一次，后续缓存）
+python download_fineweb.py
+
+# 跑一次 baseline
+torchrun --nproc_per_node=8 train_gpt.py --config baselines/naive_9l512d.py
+
+# 预期输出：BPB ≈ 1.2244，耗时约 9:30
+```
+
+### Step 2：理解 baseline 的每一行（Day 1–2）
+
+把 `train_gpt.py` 喂给 Claude，一段一段问：
+
+```
+「这段代码的作用是什么？它对 BPB 有什么影响？
+如果我改 X，会影响什么？有没有现成的 ablation？」
+```
+
+**重点关注：**
+- 数据加载（shuffle / pack / pad）
+- Transformer block（attention 实现、norm 位置、residual）
+- Optimizer（lr schedule、weight decay、grad clip）
+- Mixed precision（fp16 / bf16）
+- Checkpoint 保存与压缩
+
+### Step 3：选一个方向做第一次改动（Day 2–3）
+
+**推荐首选：升级 tokenizer 到 SP8192**。原因：
+- 改动集中在数据预处理，不动模型
+- 历史上 -0.03 ~ -0.05 BPB
+- 让你熟悉「改一个东西 → 跑 3 次 → 看差值」的完整流程
+
+### Step 4：建立实验矩阵（Day 3–5）
+
+```
+实验 001：baseline
+实验 002：+ SP8192 tokenizer
+实验 003：+ Muon optimizer
+实验 004：+ SP8192 + Muon
+实验 005：+ SP8192 + Muon + int6 embedding
+...
+```
+
+每个实验跑 3 个 seed，记录 BPB 均值和标准差。
+
+### Step 5：提交与迭代（Day 5–7）
+
+把最好的方案整理成 `submission.tar.gz`，写 README，push GitHub，提交到官方榜单。
+
+### Step 6：反思与分享（Day 7）
+
+- 在群里分享一次你的方案和踩过的坑
+- 写一篇公众号文章（可计入 C7）
+- 把代码开源（计入 C5）
+
+---
+
+## 技术选型指南（给入门者的快速决策树）
+
+```
+你是第一次接触 LM 训练？
+├── 是 → 先花 2 天啃 nanoGPT 官方 tutorial
+│         再回来，直接做 Level 1
+│
+└── 否（你跑过 nanoGPT 或训过小模型）
+    ├── 你对 PyTorch profiler / FlashAttention 熟吗？
+    │   ├── 否 → Level 1 → Level 2（单点改进）
+    │   └── 是 → Level 2 起步，目标 Level 3
+    │
+    ├── 你写过 CUDA kernel 或看过 Triton 代码吗？
+    │   ├── 否 → Level 3 上限
+    │   └── 是 → 直冲 Level 4
+    │
+    └── 你发过 ML workshop paper 或 arXiv preprint 吗？
+        └── 是 → Level 4 + 把它变成一篇 paper
+```
+
+---
+
+## 参考资源
+
+| 资源 | 说明 |
+|------|------|
+| [openai/parameter-golf](https://github.com/openai/parameter-golf) | **官方 repo，必读起点** |
+| [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) | 所有现代 LM 训练的祖先代码 |
+| [karpathy/build-nanogpt 视频](https://www.youtube.com/watch?v=l8pRSuU81PU) | Andrej Karpathy 2 小时手把手训 GPT-2 |
+| [Muon optimizer](https://github.com/KellerJordan/Muon) | 当前 Parameter Golf 榜首的优化器 |
+| [FineWeb dataset](https://huggingface.co/datasets/HuggingFaceFW/fineweb) | 评估用数据集的训练版 |
+| [FlashAttention 3](https://github.com/Dao-AILab/flash-attention) | H100 上必装的 attention 实现 |
+| [SentencePiece](https://github.com/google/sentencepiece) | SP8192 tokenizer 的实现 |
+| [GPTQ 量化论文](https://arxiv.org/abs/2210.17323) | int4 / int6 量化的理论基础 |
+| [Flash-Linear-Attention](https://github.com/sustcsonglin/flash-linear-attention) | 如果你想上 linear attention |
+
+---
+
+## 常见陷阱（血的教训）
+
+| 陷阱 | 症状 | 避坑方法 |
+|------|------|---------|
+| **评估 BPB 不稳定** | 同样代码跑两次差 0.01 | 至少 3 个 seed 取平均，报 ±stderr |
+| **超 16MB 却没发现** | 提交时被拒 | 训练循环末尾自动检查 artifact 大小 |
+| **10 分钟踩边** | 在你的机器 9:50，别人机器 10:20 | 预留 20% 时间 buffer，用 8:00 目标时间 |
+| **过拟合验证集** | 本地 BPB 很低，官方评估差很多 | 不要用验证集调超参！用 train loss 或 held-out |
+| **AI 日志造假** | 评审会看时间戳 + 内容连贯性 | 真实记录每一次 AI 对话，用 `ts >> log` 落地 |
+| **不理解 Muon** | 照抄后 loss 不收敛 | 先读 Muon 原论文，理解 newton-schulz 迭代 |
+| **量化后精度崩** | int6 后 BPB 暴涨 | 只量化 embedding 和 output head，attention 保留 bf16 |
+
+---
+
+## 激励维度
+
+| 维度 | 在 C2G 中的体现 |
+|------|----------------|
+| 🥇 先行者 | **首个达成 Level 3（BPB < 1.12）的同学获得 OpenAI 推荐信** |
+| 📤 分享者 | 把你的实验矩阵和训练日志公开，让后来者少踩坑 |
+| 📈 进步者 | 从 Level 1 到 Level 3 的 BPB 降幅是最硬核的进步证明 |
+| 🤝 助人者 | 帮同学调 CUDA 环境、debug OOM、解释 Muon |
+
+---
+
+## 为什么 C2G 值得你**all-in**一个月
+
+```
+C2A  = 设计衡量 AGI 的标尺
+C9   = 完成 Kaggle 全球参赛
+C2G  = 在 OpenAI 的主场，和全球最强的 ML 选手同台竞技
+```
+
+做 C2G 的一个月，你会经历：
+
+- **极度痛苦**：10 分钟约束下每一个 bug 都是血亏，BPB 降 0.001 都是奢侈
+- **极度清晰**：你会被迫理解每一行代码的意义，因为没有浪费的空间
+- **极度快速**：每天 5–10 次实验，AI 驱动的迭代速度是前沿实验室的工作节奏
+- **极度真实**：榜单是公开的、BPB 是客观的、OpenAI 确实在看
+
+**更深层的价值：** 这个比赛训练的是**「用极少资源做极多事情」**的能力。这不是为了应付贫穷——这是顶级 ML 研究的本质。GPT-4 能做到的事，你用 16MB 做到一个有限版本，你就理解了这些系统是怎么工作的。
+
+**而且——一次上榜，改变职业轨迹。**
+
+---
+
+## 时间线总览
+
+| 日期 | 事项 |
+|------|------|
+| **发布日** | 挑战发布。Fork OpenAI repo |
+| **12/31 前** | **写 `方案草案.md`（≥ 500 字，回答 4 个门槛问题）**，提交给挑战组审核 |
+| **12/31 前** | 审核通过 → 领 **Level 1 $25 算力券** → 正式开跑 |
+| 12/31 前 | Level 1：跑通 baseline，理解每一行代码 |
+| 12/31 前 | Level 2：提交单点改进 RFC → 领 $100 算力券 → BPB < 1.18 |
+| 12/31 前 | Level 3：组合优化，BPB < 1.12，冲全球前 50 |
+| 12/31 前 | Level 4（可选）：挑战 BPB < 1.085 |
+| **12/31 23:59** | **课程最终提交截止**（OpenAI 官方榜单以官方公告为准） |
+| 5/1 | 群内分享会：讲一讲你的方案和踩过的坑 |
+| 5/1+ | 榜单前 50 者准备 OpenAI / DeepMind / Anthropic 的 onsite |
+
+---
+
+## 组队建议
+
+| 维度 | 建议 |
+|------|------|
+| 团队规模 | 1 人（单兵作战最能锻炼独立能力） 或 2 人（分工：架构 + 系统） |
+| 最佳拍档 | 一个懂 Transformer 数学、一个懂 CUDA / PyTorch 性能 |
+| 分工参考 | P1：架构设计 + ablation；P2：训练系统 + 量化 + 打包 |
+| 注意 | OpenAI 的招聘是看**个人贡献**的，组队时务必在 README 说清楚谁做了什么 |
+
+---
+
+## 前例：类似赛事里真实发生过的职业跃迁（有据可查）
+
+Parameter Golf 本身是 2026 年新赛事,还没到最终截止。但它的**直接前身**和**同类赛事**过去两年里已经产生过三类可验证的真实案例,每一个都有公开链接。
+
+---
+
+### 前例一:Keller Jordan —— 从 nanoGPT speedrun 到 OpenAI
+
+**身份:** 独立研究者
+**做了什么:** 2024 年创建 [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt),把 Andrej Karpathy 的 GPT-2 复现从 45 分钟压到了 3 分钟。在这个过程中他发明了 **Muon 优化器**,相比 AdamW 把训练速度提升了 **35%**。
+**结果:** **2024 年 12 月**,他凭一篇 [Muon 博客](https://kellerjordan.github.io/posts/muon/) 进入 **OpenAI**。他创造的 Muon 优化器如今被广泛认为是前沿 LM 训练的核心技术之一,据信也被用于 GPT 系列的后续训练。
+
+**为什么这个案例对 C2G 成立:** Parameter Golf 就是 OpenAI 在 Keller Jordan 的 nanoGPT speedrun 基础上**制度化**出来的官方赛事。前一代非官方 speedrun 已经催生了一次 OpenAI 的直接招聘——官方版本的信号强度只会更高。
+
+**来源:**
+- Keller Jordan 个人主页: https://kellerjordan.github.io/
+- Muon 博客原文: https://kellerjordan.github.io/posts/muon/
+- modded-nanoGPT repo: https://github.com/KellerJordan/modded-nanogpt
+
+---
+
+### 前例二:Franz Louis Cesista (leloykun) —— 菲律宾独立研究者
+
+**身份:** 菲律宾独立研究者 / 博客作者
+**做了什么:** 在 modded-nanoGPT speedrun 中持续贡献优化,最终在 2025 年 1 月**打破 3 分钟大关**,把纪录压到 **2.933 分钟**——意味着用 $8/小时 的 8×H100 云实例,训练一个 GPT-2 级模型只需要 **$0.40**。他还在 Muon 优化器的 Newton-Schulz 系数上做了进一步的 1-2% 效率优化。
+**结果:** 发表多篇研究博客,被主流 ML 社区持续引用,进入全球 nanoGPT speedrun 的核心贡献者圈子。
+
+**为什么这个案例对 C2G 成立:** 证明了**非美国、非藤校、非博士**的独立研究者,完全有可能通过公开赛事进入全球 LM 训练的前沿圈子。Cesista 没有任何"传统简历优势",他的证明就是纪录本身。
+
+**来源:**
+- 个人博客: https://leloykun.github.io/
+- 宣布破 3 分钟纪录的 Tweet: https://x.com/leloykun/status/1880301753213809016
+- Muon 系数优化博客: https://leloykun.github.io/ponder/muon-opt-coeffs/
+
+---
+
+### 前例三:ARC Prize 2024 的 Ekin Akyürek (MIT) —— 用竞赛变成顶会论文
+
+**身份:** MIT 博士生
+**做了什么:** 和团队一起参加 [ARC Prize 2024](https://arcprize.org/) ——François Chollet 发起的抽象推理挑战,总奖金 $100 万。他们用"测试时训练"(Test-Time Training)的方法在 ARC 公开验证集上达到 **61.9%**,**匹配人类平均水平**。
+**结果:** 获得 **ARC Prize 2024 论文奖第 2 名**。论文 [《The Surprising Effectiveness of Test-Time Training for Abstract Reasoning》](https://arxiv.org/abs/2411.07279) 发表于 arXiv 并被 ICML/NeurIPS 收录,开创了 LM 推理阶段的新范式。
+
+**为什么这个案例对 C2G 成立:** 顶级 ML 竞赛不只是招聘漏斗,也是**研究论文的孵化器**。C2G 的 Level 4 要求一份英文 technical report——完成到这一步的方案,按历史经验完全有可能投中 workshop paper 乃至 main conference。
+
+**来源:**
+- ARC Prize 2024 官网: https://arcprize.org/
+- Ekin Akyürek 个人主页: https://ekinakyurek.github.io/
+- 论文 arXiv: https://arxiv.org/abs/2411.07279
+
+---
+
+### 前例四:NVIDIA KGMoN 团队 —— 竞赛背景是可写进 JD 的招聘硬标准
+
+**身份:** NVIDIA 内部的 **KGMoN (Kaggle Grandmasters of NVIDIA)** 团队
+**做了什么:** NVIDIA 组建了一个由 9 名 Kaggle Grandmaster 组成的研究团队,由 Distinguished Engineer **Jean-François Puget** 领导,成员包括 Chris Deotte、Gilberto Titericz、Kazuki Onodera、Bojan Tunguz、Théo Viel、Bo Liu 等。其中 Yauhen Babakhin 直接从 H2O.ai 被挖到 NVIDIA。
+**结果:** NVIDIA **公开发布过**把"Kaggle Grandmaster"写作硬性要求的 JD。一个 Kaggle 徽章——不是 PhD、不是 Stanford——就是入职通行证。
+
+**为什么这个案例对 C2G 成立:** 证明了**客观竞赛成绩在顶级硬件/AI 公司是可以直接替代传统学历信号的**。如果 Kaggle 排名可以写进 JD,那么 OpenAI Parameter Golf 榜单排名也完全可以成为同等或更强的信号——尤其因为它直接测量的是 LM 训练能力,而不是"随机数据集上的 XGBoost 调参"。
+
+**来源:**
+- NVIDIA KGMoN 官方页面: https://www.nvidia.com/en-us/ai-data-science/kaggle-grandmasters/
+- H2O.ai Kaggle Grandmasters 团队: https://h2o.ai/company/team/kaggle-grandmasters/
+
+---
+
+**核心信号:** 顶级实验室要的不是「会用 PyTorch」,而是「能在约束下快速迭代、客观衡量自己进步」的人。C2G 恰好把这两件事变成可验证的数字。
+
+**一个更清醒的提醒:** 上面四个案例里,没有一个是"本科生 3 周内拿到 $250K offer"这种爽文叙事。真实路径是:**做出可被公开验证的工作 → 获得圈子内关注 → 经过数月甚至一年的接触 → 最终进入目标实验室**。Parameter Golf 不是跳过这个过程,是**启动这个过程**的最好入口之一。
+
+---
+
+## 关于风险与诚实
+
+**诚实预期：**
+
+- **不是每个人都能打进前 20**（全球可能有上千人参赛）
+- **成本不是 0**（至少 $150–$500 的算力）
+- **时间不是 0**（全力做需要 4 周，每天 4–8 小时）
+
+**但即使你只做到 Level 2：**
+- 你已经训过真正的语言模型，跑通了完整 pipeline
+- 你已经用 AI 做过系统性的实验设计
+- 你已经和全球 ML 社区正面接触过一次
+- 这些经历本身就是简历上的加分项
+
+**即使你只做到 Level 1：**
+- 你已经打开了 LM 训练的黑盒
+- 你已经知道自己和全球顶尖水平的差距在哪
+- 你已经获得了后续所有 AI 研究的入场券
+
+**这个挑战的真正价值，不是奖金，不是 offer，是让你**第一次从全球 AI 研究者的视角**看自己。**
+
+---
+
+> 📣 **C2G 的终极价值：**
+>
+> 所有其他挑战都在问你「你能产出什么」。
+> C2G 在问你「在最严苛的约束下，你能产出什么」。
+>
+> 这才是顶级 ML 工程师真正被考察的维度。
+> 因为真实世界里，从来没有「无限资源、无限时间」——
+> 有的只是「限定时间、限定算力、必须交付」。
+>
+> **AI 实验室需要的不是会用 AI 的人，是能在约束下训出 AI 的人。**
+>
+> 而 C2G，就是那把尺子。
+
+---
+
+## 附录 A：BPB 是什么？为什么用这个指标？
+
+**BPB (Bits-Per-Byte)** = 你的模型对一段文本编码需要多少比特，平均到每一个字节。
+
+- 越低 = 模型对文本的预测越准确 = 压缩率越高
+- Tokenizer 无关：不管你用 1024 还是 8192 vocab，比的都是对原始字节的压缩能力
+- 比 perplexity 公平：perplexity 跟 vocab size 相关，BPB 不会
+
+**直觉：** 把 LM 看成一个**文本压缩器**。BPB 越低说明模型越"理解"文本，越能预测下一个字节是什么。
+
+这也是为什么 Parameter Golf 用 BPB 而非 MMLU / HumanEval：
+- BPB 是**底层能力**的直接度量
+- MMLU 等 benchmark 已经饱和，容易被 gaming
+- BPB 无法被"hack"——只能被真实的优化提升
+
+---
+
+## 附录 B：快速自测 —— 你现在是哪个级别？
+
+| 问题 | 是 → | 否 → |
+|------|------|------|
+| 你能从零写一个 2 层 Transformer 的 forward pass？ | Level 1 起点 | 先看 nanoGPT 视频 |
+| 你知道 AdamW 和 Muon 的区别？ | Level 2 起点 | 先读 Muon 论文 |
+| 你能用 PyTorch profiler 找到训练瓶颈？ | Level 3 起点 | 先学 profiler |
+| 你写过 int4 / int6 的量化代码？ | Level 3+ 起点 | 先看 GPTQ 论文 |
+| 你读过 3 篇以上 ICML / NeurIPS 的 LM 训练 paper？ | Level 4 起点 | 先读 Chinchilla + Muon + FlashAttention |
+
+---
+
+**最后一句话：**
+
+**这个挑战不保证你拿到 OpenAI offer，但它保证你成为一个真正理解 AI 的人。**
+
+**去 Fork 那个 repo，开始你的第一次训练。**
+

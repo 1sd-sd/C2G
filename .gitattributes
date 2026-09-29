@@ -1,0 +1,37 @@
+# ============================================================
+# 行尾策略
+#
+# 默认 `-text`：不做任何行尾转换，逐字节入库。
+# 这是本仓库最不能出错的一点 —— experiments/corpus/raw/*.txt 是语料正文，
+# manifest.json 记录了它的 total_chars=12436325 与各词表的 token 数；
+# 一旦被 LF→CRLF 转换，字符数、token 数、bytes_per_token 全部变化，
+# 复现出来的 BPB 就不再等于提交里声明的数字。
+#
+# 同类还需保持原样的：lishengdan_C2G_logs/*.txt（训练日志，是证据）、
+# datasets/*.bin（二进制分片）、artifact（量化权重与 tar.gz）、tech_report.pdf。
+# 它们全部落在下面的默认规则里，无需再单独声明。
+# ============================================================
+
+* -text
+
+# 以下仅为方便 GitHub 正常识别与渲染，按 LF 存储；
+# 不含 *.txt —— .txt 里有语料和日志，必须走上面的 `-text`。
+*.py     text eol=lf
+*.sh     text eol=lf
+*.md     text eol=lf
+*.json   text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.csv    text eol=lf
+*.cfg    text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# 显式声明二进制（防止将来有人改成 text）
+*.bin     binary
+*.pt      binary
+*.model   binary
+*.vocab   binary
+*.gz      binary
+*.pdf     binary
+*.png     binary

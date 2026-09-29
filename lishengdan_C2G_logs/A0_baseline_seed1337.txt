@@ -1,0 +1,14 @@
+step:100/400 train_loss:4.4076 train_time:100845ms step_avg:1008.45ms
+step:200/400 train_loss:4.0649 train_time:198900ms step_avg:994.50ms
+step:200/400 val_loss:4.0587 val_bpb:2.3429 train_time:198904ms step_avg:994.52ms
+step:300/400 train_loss:3.8411 train_time:295475ms step_avg:984.92ms
+step:400/400 train_loss:3.6368 train_time:391656ms step_avg:979.14ms
+step:400/400 val_loss:3.5942 val_bpb:2.0748 train_time:391659ms step_avg:979.15ms
+pre_quant val_loss:3.5942 val_bpb:2.0748
+Serialized model: 3308969 bytes
+Code size: 62932 bytes
+quantization: method=rtn_sdclip bits=6 embed_bits=8 sdclip_k=12.85
+Serialized model rtn_sdclip+zlib: 640141 bytes (payload:844480 raw_torch:873466 ratio:3.90x)
+Total submission size: 703073 bytes
+final_quant_roundtrip val_loss:3.5971 val_bpb:2.0764 eval_time:7921ms
+final_quant_roundtrip_exact val_loss:3.59707916 val_bpb:2.07643310

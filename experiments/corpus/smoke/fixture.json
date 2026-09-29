@@ -1,0 +1,5 @@
+{
+  "vocab_size": 2048,
+  "tokenizer": "smoke\\tokenizers\\fineweb_2048_bpe.model",
+  "data_path": "smoke\\datasets\\proxy_sp2048"
+}

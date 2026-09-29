@@ -1,0 +1,91 @@
+{
+  "author": "lishengdan",
+  "github_id": "lishengdan",
+  "arm": "A2_sp8192",
+  "name": "SP8192 vocabulary + RTN int6 matrices / int8 embeddings + percentile clip / zlib",
+  "date": "2026-09-29",
+  "track": "10min_16mb",
+  "val_bpb": 1.854895,
+  "val_bpb_pre_quant": 1.854098,
+  "quantization_tax": 0.000797,
+  "val_loss": 4.942167,
+  "seeds": [
+    1337,
+    2024,
+    42
+  ],
+  "seed_results": {
+    "1337": {
+      "val_bpb": 1.853154,
+      "val_bpb_pre_quant": 1.852285,
+      "artifact_bytes": 1521621
+    },
+    "2024": {
+      "val_bpb": 1.854895,
+      "val_bpb_pre_quant": 1.854098,
+      "artifact_bytes": 1521411
+    },
+    "42": {
+      "val_bpb": 1.862682,
+      "val_bpb_pre_quant": 1.861976,
+      "artifact_bytes": 1520051
+    }
+  },
+  "seed_bpb_mean": 1.856911,
+  "seed_bpb_std": 0.004143,
+  "hardware": "CPU (22 threads) - local screening run, NOT a 8xH100 submission",
+  "pytorch_version": "2.14.0+cpu",
+  "evaluation_corpus": "Simple English Wikipedia proxy corpus (deterministic prefix of dumps.wikimedia.org multistream dump, CC BY-SA 4.0)",
+  "not_official_fineweb": true,
+  "model_config": {
+    "vocab_size": 8192,
+    "num_layers": 6,
+    "model_dim": 128,
+    "num_heads": 8,
+    "num_kv_heads": 4,
+    "mlp_mult": 2,
+    "tie_embeddings": true,
+    "tied_embed_init_std": 0.005,
+    "logit_softcap": 30.0,
+    "rope_base": 10000.0,
+    "qk_gain_init": 1.5,
+    "layer_schedule": null,
+    "parallel_resid_from": -1
+  },
+  "quantization": {
+    "method": "rtn",
+    "clip_rule": "percentile",
+    "method_declared": "rtn_sdclip",
+    "matrix_bits": 6,
+    "embedding_bits": 8,
+    "sdclip_k": 12.85,
+    "compression": "zlib"
+  },
+  "components": {
+    "sp_vocab": 8192,
+    "qk_gain_init": 1.5,
+    "parallel_resid_from": -1,
+    "layer_schedule": "identity",
+    "ema_decay": 0.0,
+    "ema_quant_aware": false,
+    "qat_start_frac": 0.0
+  },
+  "artifact": {
+    "total_bytes": 1736896,
+    "cap_bytes": 16000000,
+    "compliant": true,
+    "uncompressed_payload_bytes": 1957452,
+    "sha256": "1243f00d570fb4758ece8ed51d77fb7cd0dbb44c7e35458d81b65a07ba6a2f41",
+    "components": {
+      "code_bytes": 64924,
+      "weights_compressed_bytes": 1521411,
+      "tokenizer_bytes": 371117
+    }
+  },
+  "reproduce": {
+    "train": "python lishengdan_C2G_train_gpt.py  # with the env vars recorded in the run log",
+    "evaluate": "python lishengdan_C2G_eval_bpb.py --artifact <tar.gz payload> --submission lishengdan_C2G_submission.json --data-path <proxy corpus> --tokenizer <sp model>",
+    "run_log": "lishengdan_C2G_logs/A2_sp8192_seed2024.txt"
+  },
+  "compliance_statement": "This manifest describes a LOCAL SCREENING RUN on a CPU. It reproduces the official pipeline (training, quantization, compression, round-trip BPB evaluation) on a proxy corpus but does not claim the official FineWeb val_bpb, the 10-minute 8xH100 constraint, or the 16MB-scale model."
+}

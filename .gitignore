@@ -1,0 +1,38 @@
+# ============================================================
+# C2G 参数高尔夫 —— 仓库忽略规则
+# 原则：只排除「可重跑得到的中间产物」与「已有唯一副本的重复文件」，
+#       交付物、证据、语料一律入库，保证 clone 下来即可复现。
+# ============================================================
+
+# ---- 1. 可重跑的权重检查点（约 178 MB）----
+# 34 次运行的完整训练态 / 量化态权重，由 experiments/run_matrix.py 重新生成。
+# 出货模型不在这里丢失：artifact/final_model.quant.bin 与
+# lishengdan_C2G_submission.tar.gz 才是提交的 artifact，已入库。
+experiments/results/runs/*/final_model.pt
+experiments/results/runs/*/final_model.quant.bin
+
+# ---- 2. 重复的逐 run 日志 ----
+# experiments/results/runs/*/logs/<run>.txt 与 lishengdan_C2G_logs/<run>.txt
+# 逐字节相同（已用 cmp 全量校验 34/34 一致），只保留后者一份。
+experiments/results/runs/*/logs/
+
+# ---- 3. Python 依赖与缓存 ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---- 4. 编辑器 / 操作系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 5. 运行临时产物 ----
+*.tmp
+reproduce_*.json
+artifact_fullstack/

@@ -1,0 +1,221 @@
+[17:49:10] waiting for matrix (target 34 result JSONs)
+[18:25:43] all 34 results present
+[18:25:44] results: 34/34
+[18:25:44] === run_matrix.py --summarize-only ===
+# Local proxy ablation matrix
+
+Model: 822,704 params, 6 layers x 128, 4096 tokens/step, 400 steps (1.64M tokens seen).
+
+| arm | seeds | final val_bpb | std | deployed pre-quant | quant tax | paired Δ vs baseline | artifact |
+|---|---|---|---|---|---|---|---|
+| A0_baseline | 3 | 2.0817 | 0.0055 | 2.0801 | +0.0016 | +0.0000 | 640,141 |
+| A1_sp4096 | 2 | 1.9293 | 0.0003 | 1.9286 | +0.0008 | -0.1536 | 1,015,479 |
+| A2_sp8192 | 3 | 1.8569 | 0.0041 | 1.8561 | +0.0008 | -0.2248 | 1,521,621 |
+| A3_qkgain | 2 | 2.0884 | 0.0006 | 2.0862 | +0.0022 | +0.0055 | 639,799 |
+| A4_parresid | 2 | 2.0835 | 0.0060 | 2.0815 | +0.0019 | +0.0006 | 640,817 |
+| A5_recurrence | 2 | 2.0977 | 0.0014 | 2.0961 | +0.0016 | +0.0148 | 640,036 |
+| A6_ema | 2 | 2.1561 | 0.0094 | 2.0812 | +0.0013 | +0.0732 | 640,698 |
+| Q1_int6_pct | 2 | 2.0829 | 0.0065 | 2.0812 | +0.0017 | +0.0000 | 640,141 |
+| Q2_int6_sd | 2 | 2.1072 | 0.0052 | 2.0812 | +0.0260 | +0.0243 | 454,999 |
+| Q3_int8_sd | 2 | 2.0931 | 0.0058 | 2.0812 | +0.0119 | +0.0102 | 603,561 |
+| Q4_int6_sd_gptq | 2 | 2.1024 | 0.0048 | 2.0812 | +0.0212 | +0.0195 | 455,662 |
+| Q5_int6_sd_qat | 2 | 2.1162 | 0.0023 | 2.1019 | +0.0143 | +0.0333 | 452,865 |
+| B1_combo | 3 | 1.9538 | 0.0060 | 1.8836 | +0.0105 | -0.1279 | 1,025,623 |
+| B2_combo_qaema | 3 | 1.9634 | 0.0061 | 1.8836 | +0.0149 | -0.1184 | 1,024,222 |
+| B3_combo_gptqoff | 2 | 1.9676 | 0.0074 | 1.8826 | +0.0203 | -0.1153 | 1,022,757 |
+
+[18:25:46] ok: run_matrix.py
+[18:25:46] === analyze_results.py ===
+# 预注册预测记分卡 / Pre-registered prediction scorecard
+
+判定规则（写死在 `analyze_results.py` 里，不靠人工解释）：
+
+```
+m  = 配对差的均值        hw = 该配对差的 95% t 区间半宽
+n < 2                  -> UNRESOLVED（无法估计方差）
+|m| <= hw              -> UNRESOLVED（功效不足，与 0 无法区分）
+sign(m) 与预测方向一致  -> SUPPORTED
+否则                    -> NOT SUPPORTED（真·被证伪）
+```
+
+基线 `A0_baseline` 的跨 seed 标准差：**σ = 0.0068 BPB**（3 个种子）。
+
+| id | 预测 | 阈值 | n | 实测配对Δ | 半宽 hw | 判定 |
+|---|---|---|---|---|---|---|
+| P1 | SP4096/SP8192 相对 SP1024 降低本地 BPB | Δ ≤ −0.02 | 3 | -0.2248 | ±0.0043 | SUPPORTED |
+| P2 | QK-Gain 5.25 相对默认 1.5 有正收益 | Δ ≤ −0.005 | 2 | +0.0055 | ±0.0741 | UNRESOLVED (UNDERPOWERED) |
+| P3 | 并行残差（后半段层）有正收益 | Δ ≤ −0.005 | 2 | +0.0006 | ±0.0064 | UNRESOLVED (UNDERPOWERED) |
+| P4 | 深度递归（循环中间层）有正收益 | Δ ≤ −0.005 | 2 | +0.0148 | ±0.0648 | UNRESOLVED (UNDERPOWERED) |
+| P5 | 朴素 EMA 降低 pre-quant BPB 但放大 quantization tax | Δtax > 0 | 2 | -0.0004 | ±0.0020 | UNRESOLVED (UNDERPOWERED) |
+| P6 | 训练末期 QAT 把 quantization tax 压低 50% 以上 | reduction ≥ 50% | 2 | +45.1% | -- | NOT SUPPORTED |
+| P7 | (原创) 量化感知 EMA (QA-EMA) 优于朴素 EMA | Δ ≤ −0.002 | 3 | +0.0096 | ±0.0008 | NOT SUPPORTED |
+| P8 | 同等 6-bit 下 GPTQ 优于 RTN+SDClip | Δ ≤ −0.002 | 2 | -0.0048 | ±0.0046 | SUPPORTED |
+
+## 逐条注记
+
+- **P1** — evaluated on A2_sp8192; A1_sp4096: -0.1536, A2_sp8192: -0.2248。判定：`SUPPORTED`
+- **P2** — arm A3_qkgain vs A0_baseline。判定：`UNRESOLVED (UNDERPOWERED)`
+- **P3** — arm A4_parresid vs A0_baseline。判定：`UNRESOLVED (UNDERPOWERED)`
+- **P4** — arm A5_recurrence vs A0_baseline。判定：`UNRESOLVED (UNDERPOWERED)`
+- **P5** — per-seed (tax[A6] − tax[A0])。判定：`UNRESOLVED (UNDERPOWERED)`
+- **P6** — tax +0.0260 → +0.0143 (n=2 seeds)。判定：`NOT SUPPORTED`
+- **P7** — head-to-head B2 − B1, same config except EMA_QUANT_AWARE。判定：`NOT SUPPORTED`
+- **P8** — head-to-head Q4 − Q2 (both int6+SDClip); combo cross-check B3 − B1: +0.0158。判定：`SUPPORTED`
+
+## 逐臂分辨率
+
+| 臂 | n | 配对Δ 均值 | 配对Δ 标准差 | 95% 半宽 |
+|---|---|---|---|---|
+| A1_sp4096 | 2 | -0.1536 | 0.0087 | ±0.0785 |
+| A2_sp8192 | 3 | -0.2248 | 0.0017 | ±0.0043 |
+| A3_qkgain | 2 | +0.0055 | 0.0083 | ±0.0741 |
+| A4_parresid | 2 | +0.0006 | 0.0007 | ±0.0064 |
+| A5_recurrence | 2 | +0.0148 | 0.0072 | ±0.0648 |
+| A6_ema | 2 | +0.0732 | 0.0041 | ±0.0371 |
+| B1_combo | 3 | -0.1279 | 0.0054 | ±0.0134 |
+| B2_combo_qaema | 3 | -0.1184 | 0.0053 | ±0.0133 |
+| B3_combo_gptqoff | 2 | -0.1153 | 0.0013 | ±0.0113 |
+| Q1_int6_pct | 2 | +0.0000 | 0.0000 | ±0.0000 |
+| Q2_int6_sd | 2 | +0.0243 | 0.0019 | ±0.0167 |
+| Q3_int8_sd | 2 | +0.0102 | 0.0010 | ±0.0088 |
+| Q4_int6_sd_gptq | 2 | +0.0195 | 0.0024 | ±0.0212 |
+| Q5_int6_sd_qat | 2 | +0.0333 | 0.0058 | ±0.0524 |
+
+**怎么读这张表。** `UNRESOLVED (UNDERPOWERED)` 的含义是：这个效应在本装置上**与 0 无法区分**，无论点估计落在零的哪一边，都不构成证据。只有 `SUPPORTED` / `NOT SUPPORTED` 两种判定才承载证据。把“功效不足”读成“不成立”，是这类小样本消融里最常见的自欺。
+
+**为什么 n=2 的臂半宽特别大（±0.07 而不是 ±0.004）？** 这不是算错。95% t 区间在 df=1 时的临界值是 **12.706**，在 df=2 时降到 4.303。也就是说，**两个种子在统计上几乎等于没有重复**：配对差只要不是完全一致，区间就会被这个 12.7 放大到 6 倍以上。这正是本次复盘想传达的核心事实之一——本装置只有在效应远远大于 ~0.01 BPB 时才具备判决力。
+
+-> results/power.json, results/prediction_scorecard.md
+[18:25:47] ok: analyze_results.py
+[18:25:48] === write_ablation_report.py ===
+wrote lishengdan_C2G_ablation.md
+wrote lishengdan_C2G_leaderboard.md
+[18:25:49] ok: write_ablation_report.py
+[18:25:50] === make_figures.py ===
+budget sanity checks (analytic, with 0.92x entropy coding):
+  naive baseline 9x512 SP1024 MLP2 int8   16.23 MB  OVER
+  11x512 SP8192 MLP2 int6                 18.36 MB  OVER
+  11x512 SP8192 MLP4 int6                 26.32 MB  OVER
+  8x512 SP8192 MLP2 int6                  14.53 MB  FITS
+  11x448 SP8192 MLP3 int6                 17.65 MB  OVER
+  11x384 SP8192 MLP2 int6                 11.27 MB  FITS
+figures -> ['fig_ablation.png', 'fig_budget.png', 'fig_curves.png', 'fig_quant_tax.png', 'fig_tokenizer.png']
+[18:25:52] ok: make_figures.py
+[18:25:53] === make_report.py ===
+wrote D:\.cogseed\userWorkSpace\我的挑战有哪些\C2G提交成果\lishengdan_C2G_tech_report.pdf (299 KB, 6 pages)
+[18:25:54] ok: make_report.py
+[18:25:55] === package_submission.py ===
+  arm ranking: A2_sp8192            mean_bpb=1.8569  n=3
+  arm ranking: A1_sp4096            mean_bpb=1.9293  n=2
+  arm ranking: B1_combo             mean_bpb=1.9538  n=3
+selected arm: A2_sp8192
+deploying A2_sp8192_seed2024: final_bpb=1.8549 (median of 3 seeds)
+artifact: 1,736,285 bytes  (cap 16,000,000, headroom 14,263,715)
+wrote lishengdan_C2G_submission.json
+copied 34 run logs -> lishengdan_C2G_logs/
+[18:25:59] ok: package_submission.py
+[18:25:59] === mirror tarball to submission root ===
+[18:26:00] ok: tarball mirrored to root
+[18:26:01] === verify_deliverables.py ===
+==============================================================================
+1. REQUIRED DELIVERABLES PRESENT
+==============================================================================
+  [ OK ] README.md  (8,783 B)
+  [ OK ] lishengdan_C2G_方案草案.md  (9,514 B)
+  [ OK ] lishengdan_C2G_方案设计.md  (16,527 B)
+  [ OK ] lishengdan_C2G_train_gpt.py  (63,429 B)
+  [ OK ] lishengdan_C2G_eval_bpb.py  (4,483 B)
+  [ OK ] lishengdan_C2G_拿来说明.md  (13,558 B)
+  [ OK ] lishengdan_C2G_AI日志.md  (18,556 B)
+  [ OK ] lishengdan_C2G_AAR.md  (23,488 B)
+  [ OK ] lishengdan_C2G_ablation.md  (5,768 B)
+  [ OK ] lishengdan_C2G_leaderboard.md  (3,928 B)
+  [ OK ] lishengdan_C2G_tech_report.pdf  (305,881 B)
+  [ OK ] lishengdan_C2G_submission.json  (2,938 B)
+  [ OK ] submission tarball (['lishengdan_C2G_submission.tar.gz', 'artifact\\lishengdan_C2G_submission.tar.gz'])
+  [ OK ] run logs copied: 34 files
+
+==============================================================================
+2. NO PLACEHOLDER CONTENT IN SHIPPED DOCUMENTS
+==============================================================================
+  [warn] lishengdan_C2G_方案设计.md: contains ['dummy']
+  [ OK ] placeholder scan complete
+
+==============================================================================
+3. ARTIFACT BYTE CAP
+==============================================================================
+  [ OK ] lishengdan_C2G_submission.tar.gz = 1,736,285 B  (cap 16,000,000, headroom 14,263,715)
+  [ OK ] artifact\lishengdan_C2G_submission.tar.gz = 1,736,285 B  (cap 16,000,000, headroom 14,263,715)
+
+==============================================================================
+4. SHIPPED NUMBERS AGREE WITH THE RESULT JSONs THEY CAME FROM
+==============================================================================
+  shipped arm: A2_sp8192
+  [ OK ] A2_sp8192_seed1337: final_bpb 1.853154 == manifest 1.853154
+  [ OK ] A2_sp8192_seed2024: final_bpb 1.854895 == manifest 1.854895
+  [ OK ] A2_sp8192_seed42: final_bpb 1.862682 == manifest 1.862682
+  [ OK ] manifest val_bpb 1.854895 is the median seed (1.854895)
+  [ OK ] quantization_tax = +0.000797 (>=0 means quantisation costs BPB)
+  [ OK ] quantization_tax = +0.000797 (sanity: a benign int6/int8 tax)
+
+==============================================================================
+5. EXPERIMENT COUNT CONSISTENCY ACROSS DOCUMENTS
+==============================================================================
+  [ OK ] result JSONs on disk: 34 runs / 15 arms
+  [ OK ] arm/run-count scan complete
+
+==============================================================================
+6. SUMMARY / POWER ARTIFACTS EXIST AND PARSE
+==============================================================================
+  [ OK ] results/summary.json parses, 15 entries
+  [ OK ] results/power.json parses, 5 entries
+  [ OK ] results/prediction_scorecard.md (4,016 B)
+  [ OK ] summary.json covers exactly the 15 arms on disk
+  [ OK ] summary.json means reproduce from result JSONs
+
+==============================================================================
+7. FIGURES + PDF SIZE SANITY
+==============================================================================
+  [ OK ] fig_ablation.png
+  [ OK ] fig_quant_tax.png
+  [ OK ] fig_curves.png
+  [ OK ] fig_tokenizer.png
+  [ OK ] fig_budget.png
+  [ OK ] tech_report.pdf = 305,881 B
+
+==============================================================================
+8. DERIVED-ARTIFACT FRESHNESS  (catches stale files built from placeholder data)
+==============================================================================
+  [ OK ] summary.json is at least as new as the newest run result
+  [ OK ] power.json is at least as new as summary.json
+  [ OK ] prediction_scorecard.md is at least as new as summary.json
+  [ OK ] figures are at least as new as summary.json
+  [ OK ] tech_report.pdf is at least as new as figures and power.json
+  [ OK ] submission.json is at least as new as the newest run result
+
+==============================================================================
+RESULT: 0 failures, 1 warnings
+==============================================================================
+  warn: lishengdan_C2G_方案设计.md: contains ['dummy']
+[18:26:02] ok: verify_deliverables.py
+[18:26:02] PIPELINE COMPLETE (audit exit code recorded above)
+-rw-r--r-- 1 L1983 197609 67445 Sep 29 17:39 A6_ema_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67443 Sep 29 17:40 A6_ema_seed42.txt
+-rw-r--r-- 1 L1983 197609 67740 Sep 29 18:06 B1_combo_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67740 Sep 29 18:12 B1_combo_seed2024.txt
+-rw-r--r-- 1 L1983 197609 67738 Sep 29 18:07 B1_combo_seed42.txt
+-rw-r--r-- 1 L1983 197609 67740 Sep 29 18:13 B2_combo_qaema_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67739 Sep 29 18:21 B2_combo_qaema_seed2024.txt
+-rw-r--r-- 1 L1983 197609 67738 Sep 29 18:20 B2_combo_qaema_seed42.txt
+-rw-r--r-- 1 L1983 197609 67527 Sep 29 18:24 B3_combo_gptqoff_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67525 Sep 29 18:24 B3_combo_gptqoff_seed42.txt
+-rw-r--r-- 1 L1983 197609 67381 Sep 29 17:44 Q1_int6_pct_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67379 Sep 29 17:45 Q1_int6_pct_seed42.txt
+-rw-r--r-- 1 L1983 197609 67377 Sep 29 17:45 Q2_int6_sd_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67375 Sep 29 17:46 Q2_int6_sd_seed42.txt
+-rw-r--r-- 1 L1983 197609 67377 Sep 29 17:51 Q3_int8_sd_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67375 Sep 29 17:52 Q3_int8_sd_seed42.txt
+-rw-r--r-- 1 L1983 197609 67592 Sep 29 17:52 Q4_int6_sd_gptq_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67597 Sep 29 17:53 Q4_int6_sd_gptq_seed42.txt
+-rw-r--r-- 1 L1983 197609 67418 Sep 29 17:58 Q5_int6_sd_qat_seed1337.txt
+-rw-r--r-- 1 L1983 197609 67416 Sep 29 17:59 Q5_int6_sd_qat_seed42.txt
